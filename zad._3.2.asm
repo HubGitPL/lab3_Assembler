@@ -78,8 +78,11 @@ byl_enter:
 		ret
 wczytaj_do_EAX	ENDP
 _main PROC
+ptl:
 	call wczytaj_do_EAX
 	call wyswietl_EAX
+	cmp EAX, 0
+	jne ptl
 	push 0
 	call _ExitProcess@4
 _main ENDP
