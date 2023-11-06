@@ -28,7 +28,6 @@ wyswietl_EAX PROC
 		dec esi ;zmiejszenie indeksu
 		jmp wypeln
 	wyswietl:
-		mov byte PTR znaki [0], 0AH ;kod nowego wiersza
 		mov byte PTR znaki [11], 0AH ;kod nowego wiersza
 	;wyswietlenie cyfr na ekranie
 		push dword PTR 12 ;liczba wyswietlanych znaków
