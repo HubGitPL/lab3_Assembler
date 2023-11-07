@@ -1,7 +1,3 @@
-;Zadanie 3.4. Napisać program w asemblerze, który wczyta liczbę dziesiętną z klawiatury i
-;wyświetli na ekranie jej reprezentację w systemie szesnastkowym. W programie wykorzystać
-;podprogramy wczytaj_do_EAX i wyswietl_EAX_hex.
-;first, not working yey, version
 .686
 .model flat
 extern __write : PROC
@@ -12,6 +8,7 @@ public _main
 znaki	db 12 dup (?)
 obszar db 12 dup (?)
 dziesiec dd 10 ; mnożnik
+dekoder db '0123456789ABCDEF'
 .code
 wyswietl_EAX PROC
 			 pusha
@@ -81,6 +78,56 @@ byl_enter:
 ;wartość binarna wprowadzonej liczby znajduje się teraz w rejestrze EAX
 		ret
 wczytaj_do_EAX	ENDP
+
+wyswietl_EAX_hex	PROC
+;wyświetlanie zawartości rejestru EAX w postaci szesnastkowej
+	pusha ;przechowanie rejestrów
+
+	;rezerwacja 12 bajtów na stosie (poprzez zmniejszenie rejestru ESP) przeznaczonych na 
+	;tymczasowe przechowanie cyfr szesnastkowych wyświetlanej liczby
+	sub	esp, 12
+	mov edi, esp ;adres zarezerwowanego obszaru
+
+	;przygotowanie konwersji 
+	mov ecx, 8 ;liczba obiegów pętli konwersji
+	mov esi, 1 ;indeks początkowy używany przy zapisie cyfr
+
+	;pętla konwersji
+	ptl3hex:
+
+	;przesunięcie cykliczne (obrót) rejestru EAX o 4 bity w lewo w szczególności,
+	;w peirwszym obiegu pętli bity nr 31-28 rejestru EAX zostaną przesunięte ja na pozycje 3 - 0
+	rol	eax, 4
+
+	;wyodrębnienie 4 najmłodszych bitów i odczytanie z tablicy 'dekoder' odpowiadającej im cyfry
+	;w zapisie szesnastkowym 
+	mov	ebx, eax ;kopiowanie EAX do EBX
+	and ebx, 0000000FH ; zerowanie bitów 31-4 rej.EBX
+	mov dl, dekoder[ebx] ;pobranie cyfry z tablicy
+
+	;przesłanie cyfry do obszaru roboczego
+	mov	[edi][esi], dl
+
+	inc esi	;inkrementacja modyfikatora
+	loop ptl3hex ;sterowanie pętlą
+
+	;wpisanie znaku nowego wiersza przed i po cyfrach
+	mov byte PTR [edi][0], 10
+	mov byte PTR [edi][9], 10
+
+	;wyświetlenie przygotowanych cyfr 
+	push 10	;8cyfr+2znaki nowej lini
+	push edi ;adres obszaru roboczego
+	push 1 ;ekran
+	call __write
+
+	;usunięcie ze stosu 24 bajtów, w tym 12 bajtów zapisanych przez 3 rozkazy push przed rozkazem call
+	;i 12 bajtów zarezerwowanych na początku podprogramu
+	add esp, 24
+
+	popa	;odtworzenie rejestrów
+	ret ;powrót z podprogramu
+wyswietl_EAX_hex	ENDP
 _main PROC
 ptl:
 	call wczytaj_do_EAX
